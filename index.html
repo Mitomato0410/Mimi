@@ -96,16 +96,23 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        // --- Firebase 初始化 ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAZr1jc23-EdgzDxUVMdRn-ROZ8ZWS_L5k",
-            authDomain: "vtuber-ktv.firebaseapp.com",
-            projectId: "vtuber-ktv",
-            storageBucket: "vtuber-ktv.firebasestorage.app",
-            messagingSenderId: "570327519718",
-            appId: "1:570327519718:web:0db4c15b94e7cad34a0627",
-            databaseURL: "https://vtuber-ktv-default-rtdb.firebaseio.com/" // 請確認此網址正確
-        };
+     // --- 這裡請整塊替換 ---
+const firebaseConfig = {
+    apiKey: "AIzaSyAZr1jc23-EdgzDxUVMdRn-ROZ8ZWS_L5k",
+    authDomain: "vtuber-ktv.firebaseapp.com",
+    projectId: "vtuber-ktv",
+    storageBucket: "vtuber-ktv.firebasestorage.app",
+    messagingSenderId: "570327519718",
+    appId: "1:570327519718:web:0db4c15b94e7cad34a0627",
+    databaseURL: "https://vtuber-ktv-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+
+// 初始化 Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
+// --------------------
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -315,5 +322,6 @@
     </script>
 </body>
 </html>
+
 
 
