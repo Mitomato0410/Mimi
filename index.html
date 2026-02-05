@@ -3,57 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>番茄園點歌系統 ♪ - Firebase 同步版</title>
+    <title>🎤 番茄園點歌系統 ♪</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <style>
-        /* 保留你原本優美的粉色調 CSS */
+        /* 你原本漂亮的 UI 樣式 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Noto Sans TC', 'Poppins', sans-serif; background: linear-gradient(135deg, #FFF8F3 0%, #FFE8F0 100%); color: #5A4A4A; min-height: 100vh; }
+        body { font-family: 'Noto Sans TC', 'Poppins', sans-serif; background: linear-gradient(135deg, #FFF8F3 0%, #FFE8F0 100%); color: #5A4A4A; min-height: 100vh; overflow-x: hidden; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #FFB6D9 0%, #D4B5F0 100%); border-radius: 0 0 30px 30px; box-shadow: 0 4px 20px rgba(255, 182, 217, 0.3); margin-bottom: 30px; color: white; }
-        .mode-switch { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
-        .mode-btn { background: linear-gradient(135deg, #FFB6D9 0%, #D4B5F0 100%); color: white; border: none; padding: 15px 25px; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 182, 217, 0.4); transition: all 0.3s ease; font-weight: 600; }
-        .filter-section { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 30px; }
-        .filter-btn { padding: 8px 18px; border: 2px solid #FFB6D9; background: white; color: #FFB6D9; border-radius: 25px; cursor: pointer; margin: 5px; transition: all 0.3s; }
+        .header { text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #FFB6D9 0%, #D4B5F0 100%); border-radius: 0 0 30px 30px; box-shadow: 0 4px 20px rgba(255, 182, 217, 0.3); margin-bottom: 30px; }
+        .header h1 { font-size: 2.2rem; font-weight: 700; color: white; margin-bottom: 10px; }
+        .header p { color: rgba(255,255,255,0.9); }
+        .filter-section { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .filter-btn { padding: 8px 18px; border: 2px solid #FFB6D9; background: white; color: #FFB6D9; border-radius: 25px; cursor: pointer; transition: all 0.3s; font-weight: 500; }
         .filter-btn.active { background: #FFB6D9; color: white; }
-        .songs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .song-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 2px solid transparent; transition: all 0.3s; }
+        .songs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .song-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 2px solid transparent; transition: all 0.3s; position: relative; }
         .song-card:hover { transform: translateY(-5px); border-color: #FFB6D9; }
-        .tag { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; margin-right: 5px; background: #FFE8F0; color: #FFB6D9; }
-        .queue-section { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 30px; }
-        .status-singing { background: #FFE8F0; color: #FFB6D9; animation: pulse 2s infinite; }
+        .song-name { font-size: 1.2rem; font-weight: 700; color: #5A4A4A; margin-bottom: 5px; }
+        .tag { padding: 3px 10px; border-radius: 10px; font-size: 0.75rem; background: #FFE8F0; color: #FFB6D9; margin-right: 5px; }
+        .request-btn { width: 100%; padding: 12px; border: none; border-radius: 15px; background: linear-gradient(135deg, #FFB6D9 0%, #D4B5F0 100%); color: white; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        .request-btn:disabled { background: #EEE; color: #AAA; cursor: not-allowed; }
+        .queue-section { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 30px; }
+        .status-singing { background: #FFE8F0; color: #FFB6D9; animation: pulse 2s infinite; border-radius: 10px; padding: 4px 10px; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
         .modal.active { display: flex; }
-        .modal-content { background: white; border-radius: 25px; padding: 30px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
-        .form-input, .form-textarea { width: 100%; padding: 12px; border: 2px solid #F0E8FF; border-radius: 12px; margin-top: 5px; outline: none; }
-        .btn-primary { background: linear-gradient(135deg, #FFB6D9 0%, #D4B5F0 100%); color: white; width: 100%; padding: 12px; border-radius: 15px; font-weight: 600; margin-top: 10px; border: none; cursor: pointer; }
-        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: white; padding: 12px 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 3000; display: none; }
+        .modal-content { background: white; border-radius: 25px; padding: 30px; max-width: 450px; width: 90%; }
+        .form-input { width: 100%; padding: 12px; border: 2px solid #F0E8FF; border-radius: 12px; margin-top: 10px; outline: none; }
+        .mode-switch { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+        .mode-btn { background: #5A4A4A; color: white; padding: 12px 20px; border-radius: 50px; cursor: pointer; border: none; font-size: 0.9rem; }
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #5A4A4A; color: white; padding: 10px 20px; border-radius: 10px; display: none; z-index: 3000; }
     </style>
 </head>
 <body>
+
     <div class="header">
         <h1>🎤 番茄園點歌系統 ♪</h1>
-        <p>資料已即時連線雲端 ♡</p>
+        <p id="conn-status">正在連線至雲端資料庫...</p>
     </div>
 
     <div class="container">
         <div id="audienceView">
-            <div class="filter-section">
-                <div id="filterButtons">
-                    <button class="filter-btn active" onclick="setFilter('all')">全部歌曲</button>
-                    <button class="filter-btn" onclick="setFilter('中文')">中文歌</button>
-                    <button class="filter-btn" onclick="setFilter('日文')">日文歌</button>
-                    <button class="filter-btn" onclick="setFilter('抒情')">抒情</button>
-                </div>
+            <div class="queue-section">
+                <h3 class="font-bold mb-3">🎵 目前排隊狀態</h3>
+                <div id="queueList" class="space-y-2 text-gray-500">載入中...</div>
             </div>
 
-            <div class="queue-section">
-                <h3 class="font-bold mb-4">🎵 排隊中</h3>
-                <div id="queueList">載入中...</div>
+            <div class="filter-section">
+                <div id="filterButtons">
+                    <button class="filter-btn active" data-filter="all">全部</button>
+                    <button class="filter-btn" data-filter="中文">中文</button>
+                    <button class="filter-btn" data-filter="日文">日文</button>
+                    <button class="filter-btn" data-filter="抒情">抒情</button>
+                </div>
+                <select id="sortSelect" class="border p-2 rounded-xl">
+                    <option value="name">歌名 A-Z</option>
+                    <option value="recent">最新新增</option>
+                </select>
             </div>
 
             <div class="songs-grid" id="songsGrid"></div>
@@ -61,14 +72,20 @@
 
         <div id="managementView" style="display:none;">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">管理模式 🔧</h2>
-                <button class="bg-green-400 text-white px-4 py-2 rounded-xl" onclick="openSongModal()">新增歌曲 +</button>
+                <h2 class="text-2xl font-bold">管理後台 🔧</h2>
+                <button class="bg-green-500 text-white px-4 py-2 rounded-xl" onclick="openSongModal()">新增歌曲 +</button>
             </div>
-            <div class="queue-section">
-                <h3 class="font-bold mb-4">📋 點歌管理</h3>
-                <div id="adminQueueList"></div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="queue-section">
+                    <h3 class="font-bold mb-4">📋 點歌管理</h3>
+                    <div id="adminQueueList" class="space-y-2"></div>
+                </div>
+                <div class="queue-section">
+                    <h3 class="font-bold mb-4">🎵 歌曲清單</h3>
+                    <div id="adminSongsList" class="space-y-2"></div>
+                </div>
             </div>
-            <div id="adminSongsList"></div>
         </div>
     </div>
 
@@ -77,251 +94,267 @@
     </div>
 
     <div class="modal" id="requestModal">
-        <div class="modal-content" id="requestModalContent"></div>
-    </div>
-
-    <div class="modal" id="songModal">
-        <div class="modal-content" id="songModalContent"></div>
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-2">我想聽這首！</h3>
+            <p id="targetSongName" class="text-pink-400 font-bold"></p>
+            <input type="text" id="requesterName" class="form-input" placeholder="你的暱稱">
+            <input type="text" id="requestMsg" class="form-input" placeholder="想對台主說的話 (選填)">
+            <button class="request-btn" id="confirmRequestBtn">確認點歌 ♪</button>
+            <button class="w-full mt-3 text-gray-400" onclick="closeModals()">取消</button>
+        </div>
     </div>
 
     <div class="modal" id="passwordModal">
         <div class="modal-content">
-            <h3 class="text-xl font-bold mb-4">輸入管理密碼 🔒</h3>
-            <input type="password" id="adminPwd" class="form-input" placeholder="預設密碼 admin">
-            <button class="btn-primary" onclick="verifyAdmin()">進入</button>
-            <button class="w-full mt-2 text-gray-400" onclick="closeModals()">取消</button>
+            <h3 class="text-xl font-bold mb-4">身分驗證 🔒</h3>
+            <input type="password" id="adminPwd" class="form-input" placeholder="請輸入管理密碼">
+            <button class="request-btn" onclick="checkPwd()">進入後台</button>
+            <button class="w-full mt-3 text-gray-400" onclick="closeModals()">取消</button>
         </div>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <div class="modal" id="songEditModal">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-4">編輯歌曲</h3>
+            <input type="text" id="editName" class="form-input" placeholder="歌名">
+            <input type="text" id="editArtist" class="form-input" placeholder="歌手">
+            <input type="text" id="editLang" class="form-input" placeholder="標籤 (用逗號隔開)">
+            <button class="request-btn" onclick="saveSong()">儲存歌曲</button>
+            <button class="w-full mt-3 text-gray-400" onclick="closeModals()">取消</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
 
     <script>
-     // --- 這裡請整塊替換 ---
-const firebaseConfig = {
-    apiKey: "AIzaSyAZr1jc23-EdgzDxUVMdRn-ROZ8ZWS_L5k",
-    authDomain: "vtuber-ktv.firebaseapp.com",
-    projectId: "vtuber-ktv",
-    storageBucket: "vtuber-ktv.firebasestorage.app",
-    messagingSenderId: "570327519718",
-    appId: "1:570327519718:web:0db4c15b94e7cad34a0627",
-    databaseURL: "https://vtuber-ktv-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
+        // --- 1. Firebase 配置 ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZr1jc23-EdgzDxUVMdRn-ROZ8ZWS_L5k",
+            authDomain: "vtuber-ktv.firebaseapp.com",
+            projectId: "vtuber-ktv",
+            storageBucket: "vtuber-ktv.firebasestorage.app",
+            messagingSenderId: "570327519718",
+            appId: "1:570327519718:web:0db4c15b94e7cad34a0627",
+            databaseURL: "https://vtuber-ktv-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
 
-// 初始化 Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.database();
-// --------------------
-
+        // 初始化
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         let songs = [];
         let queue = [];
-        let isManagementMode = false;
         let currentFilter = 'all';
+        let currentSort = 'name';
+        let isManagementMode = false;
+        let selectedSong = null;
 
-        // --- 資料同步：即時監聽 ---
+        // --- 2. 資料即時同步 ---
+        db.ref('.info/connected').on('value', snap => {
+            const status = document.getElementById('conn-status');
+            if (snap.val() === true) {
+                status.innerText = "● 雲端即時連線中";
+                status.style.color = "rgba(255,255,255,0.8)";
+            } else {
+                status.innerText = "○ 連線已中斷";
+                status.style.color = "#FF6B6B";
+            }
+        });
+
         db.ref('songs').on('value', snapshot => {
-            const data = snapshot.val();
-            songs = data ? Object.keys(data).map(key => ({...data[key], id: key})) : [];
-            renderAll();
+            const val = snapshot.val();
+            songs = val ? Object.keys(val).map(key => ({...val[key], id: key})) : [];
+            render();
         });
 
         db.ref('queue').on('value', snapshot => {
-            const data = snapshot.val();
-            queue = data ? Object.keys(data).map(key => ({...data[key], id: key})) : [];
-            renderAll();
+            const val = snapshot.val();
+            queue = val ? Object.keys(val).map(key => ({...val[key], id: key})) : [];
+            render();
         });
 
-        function renderAll() {
-            renderSongs();
-            renderQueue();
-            if(isManagementMode) {
-                renderAdminQueue();
+        // --- 3. 渲染函數 ---
+        function render() {
+            renderAudienceSongs();
+            renderAudienceQueue();
+            if (isManagementMode) {
                 renderAdminSongs();
+                renderAdminQueue();
             }
         }
 
-        // --- 核心功能 ---
-        function renderSongs() {
+        function renderAudienceSongs() {
             const grid = document.getElementById('songsGrid');
-            let displaySongs = songs.filter(s => !s.isHidden);
-            
-            if(currentFilter !== 'all') {
-                displaySongs = displaySongs.filter(s => 
-                    Object.values(s.categories || {}).flat().includes(currentFilter)
-                );
+            let filtered = songs.filter(s => !s.isHidden);
+
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(s => s.tags && s.tags.includes(currentFilter));
             }
 
-            grid.innerHTML = displaySongs.map(s => `
+            filtered.sort((a, b) => {
+                if (currentSort === 'name') return a.name.localeCompare(b.name, 'zh-TW');
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
+
+            grid.innerHTML = filtered.map(s => `
                 <div class="song-card">
-                    <div class="text-lg font-bold">${s.name}</div>
-                    <div class="text-gray-400 text-sm mb-2">${s.artist || ''}</div>
-                    <div class="mb-4">${(s.categories?.language || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
-                    <button class="btn-primary ${s.isAvailable ? '' : 'opacity-50'}" 
-                        onclick="openRequestModal('${s.id}')" ${s.isAvailable ? '' : 'disabled'}>
-                        ${s.isAvailable ? '點歌 ♪' : '暫不開放'}
+                    <div class="song-name">${s.name}</div>
+                    <div class="text-gray-400 text-sm mb-3">${s.artist || '未知歌手'}</div>
+                    <div>${(s.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+                    <button class="request-btn" onclick="openRequestModal('${s.id}')" ${s.isAvailable===false ? 'disabled' : ''}>
+                        ${s.isAvailable===false ? '休息中' : '點歌 ♪'}
                     </button>
                 </div>
             `).join('');
         }
 
-        function renderQueue() {
+        function renderAudienceQueue() {
             const list = document.getElementById('queueList');
-            const activeQueue = queue.filter(q => q.status !== 'completed' && q.status !== 'skipped');
-            if(activeQueue.length === 0) { list.innerHTML = "目前沒人點歌唷～"; return; }
+            const active = queue.filter(q => q.status !== 'completed' && q.status !== 'skipped');
+            if (active.length === 0) { list.innerHTML = "目前還沒有人點歌唷，快來當第一個！"; return; }
             
-            list.innerHTML = activeQueue.map((q, i) => `
-                <div class="flex justify-between items-center p-3 bg-pink-50 rounded-lg mb-2">
+            list.innerHTML = active.map((q, i) => `
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-pink-100">
                     <div>
-                        <span class="font-bold">${i+1}. ${q.songName}</span>
-                        <div class="text-xs text-gray-400">${q.requester || '匿名'} ${q.message ? '· '+q.message : ''}</div>
+                        <span class="font-bold text-pink-400">#${i+1}</span>
+                        <span class="ml-2 font-medium">${q.songName}</span>
+                        <span class="text-xs text-gray-400 ml-2">by ${q.requester || '匿名'}</span>
                     </div>
-                    <span class="px-2 py-1 rounded text-xs ${q.status==='singing'?'status-singing':'bg-gray-200'}">
-                        ${q.status==='singing'?'演唱中 🎤':'排隊中'}
-                    </span>
+                    <div class="${q.status==='singing' ? 'status-singing' : 'text-xs text-gray-400'}">
+                        ${q.status==='singing' ? '正在演唱 🎤' : '排隊中'}
+                    </div>
                 </div>
             `).join('');
         }
 
-        // --- 點歌邏輯 ---
-        function openRequestModal(songId) {
-            const song = songs.find(s => s.id === songId);
-            const modal = document.getElementById('requestModal');
-            document.getElementById('requestModalContent').innerHTML = `
-                <h2 class="text-xl font-bold mb-2">點歌：${song.name}</h2>
-                <input type="text" id="reqName" class="form-input" placeholder="你的名字">
-                <textarea id="reqMsg" class="form-textarea" placeholder="想說的話"></textarea>
-                <button class="btn-primary" onclick="submitRequest('${songId}', '${song.name}')">送出點歌</button>
-                <button class="w-full mt-2" onclick="closeModals()">取消</button>
-            `;
-            modal.classList.add('active');
-        }
-
-        function submitRequest(songId, songName) {
-            const requester = document.getElementById('reqName').value;
-            const message = document.getElementById('reqMsg').value;
-            db.ref('queue').push({
-                songId, songName, requester, message,
-                status: 'queued',
-                time: Date.now()
-            });
-            closeModals();
-            showToast("點歌成功！");
-        }
-
-        // --- 管理功能 ---
-        function toggleMode() {
-            if(!isManagementMode) document.getElementById('passwordModal').classList.add('active');
-            else {
-                isManagementMode = false;
-                document.getElementById('managementView').style.display = 'none';
-                document.getElementById('audienceView').style.display = 'block';
-            }
-        }
-
-        function verifyAdmin() {
-            if(document.getElementById('adminPwd').value === 'admin') {
-                isManagementMode = true;
-                document.getElementById('passwordModal').classList.remove('active');
-                document.getElementById('managementView').style.display = 'block';
-                document.getElementById('audienceView').style.display = 'none';
-                renderAdminQueue();
-                renderAdminSongs();
-            } else { alert("密碼錯誤"); }
-        }
-
-        function updateStatus(qid, status) {
-            db.ref(`queue/${qid}`).update({ status });
-            if(status === 'completed') {
-                const qItem = queue.find(q => q.id === qid);
-                const song = songs.find(s => s.id === qItem.songId);
-                if(song) db.ref(`songs/${song.id}`).update({ 
-                    sungCount: (song.sungCount || 0) + 1,
-                    lastSungDate: new Date().toISOString().split('T')[0]
-                });
-            }
+        // --- 4. 管理端功能 ---
+        function renderAdminSongs() {
+            const list = document.getElementById('adminSongsList');
+            list.innerHTML = songs.map(s => `
+                <div class="flex justify-between items-center p-2 border-b text-sm">
+                    <span class="${s.isHidden ? 'text-gray-300 line-through' : ''}">${s.name}</span>
+                    <div class="space-x-2">
+                        <button class="text-blue-400" onclick="toggleAvailable('${s.id}', ${s.isAvailable})">
+                            ${s.isAvailable ? '關閉點歌' : '開放點歌'}
+                        </button>
+                        <button class="text-gray-400" onclick="toggleHide('${s.id}', ${s.isHidden})">
+                            ${s.isHidden ? '顯示' : '隱藏'}
+                        </button>
+                        <button class="text-red-300" onclick="deleteSong('${s.id}')">刪除</button>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function renderAdminQueue() {
             const list = document.getElementById('adminQueueList');
-            list.innerHTML = queue.filter(q => q.status !== 'completed').map(q => `
-                <div class="border-b p-3 flex justify-between">
-                    <div><b>${q.songName}</b> (${q.requester || '匿名'})</div>
-                    <div>
-                        <button onclick="updateStatus('${q.id}', 'singing')" class="text-blue-500 mr-2">演唱中</button>
-                        <button onclick="updateStatus('${q.id}', 'completed')" class="text-green-500 mr-2">完唱</button>
-                        <button onclick="db.ref('queue/${q.id}').remove()" class="text-red-400">刪除</button>
+            const active = queue.filter(q => q.status !== 'completed' && q.status !== 'skipped');
+            list.innerHTML = active.map(q => `
+                <div class="p-3 bg-white border rounded-xl shadow-sm">
+                    <div class="font-bold">${q.songName} <span class="text-sm font-normal text-gray-400">(${q.requester})</span></div>
+                    <div class="mt-2 space-x-2">
+                        <button class="bg-pink-400 text-white px-3 py-1 rounded-lg text-xs" onclick="updateQueue('${q.id}', 'singing')">演唱</button>
+                        <button class="bg-green-400 text-white px-3 py-1 rounded-lg text-xs" onclick="updateQueue('${q.id}', 'completed')">完唱</button>
+                        <button class="bg-gray-200 text-gray-500 px-3 py-1 rounded-lg text-xs" onclick="db.ref('queue/${q.id}').remove()">移除</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function renderAdminSongs() {
-            const list = document.getElementById('adminSongsList');
-            list.innerHTML = songs.map(s => `
-                <div class="p-3 border-b flex justify-between items-center bg-white mb-1 rounded">
-                    <span>${s.name}</span>
-                    <button class="text-sm text-gray-400" onclick="db.ref('songs/${s.id}').update({isHidden: !s.isHidden})">
-                        ${s.isHidden ? '顯示' : '隱藏'}
-                    </button>
-                </div>
-            `).join('');
+        // --- 5. 操作邏輯 ---
+        function openRequestModal(id) {
+            selectedSong = songs.find(s => s.id === id);
+            document.getElementById('targetSongName').innerText = selectedSong.name;
+            document.getElementById('requestModal').classList.add('active');
         }
 
-        function openSongModal() {
-            const modal = document.getElementById('songModal');
-            document.getElementById('songModalContent').innerHTML = `
-                <h2 class="text-xl font-bold mb-4">新增歌曲</h2>
-                <input type="text" id="newSongName" class="form-input" placeholder="歌曲名稱">
-                <input type="text" id="newArtist" class="form-input" placeholder="歌手">
-                <input type="text" id="newLang" class="form-input" placeholder="語言 (如：中文)">
-                <button class="btn-primary" onclick="addSong()">確認新增</button>
-                <button class="w-full mt-2" onclick="closeModals()">取消</button>
-            `;
-            modal.classList.add('active');
+        document.getElementById('confirmRequestBtn').onclick = function() {
+            const name = document.getElementById('requesterName').value || '匿名';
+            const msg = document.getElementById('requestMsg').value;
+            db.ref('queue').push({
+                songId: selectedSong.id,
+                songName: selectedSong.name,
+                requester: name,
+                message: msg,
+                status: 'queued',
+                createdAt: Date.now()
+            });
+            closeModals();
+            showToast('點歌成功 ♪');
+        };
+
+        function toggleMode() {
+            if (isManagementMode) {
+                isManagementMode = false;
+                document.getElementById('managementView').style.display = 'none';
+                document.getElementById('audienceView').style.display = 'block';
+            } else {
+                document.getElementById('passwordModal').classList.add('active');
+            }
         }
 
-        function addSong() {
-            const name = document.getElementById('newSongName').value;
-            const artist = document.getElementById('newArtist').value;
-            const lang = document.getElementById('newLang').value;
-            if(!name) return;
+        function checkPwd() {
+            if (document.getElementById('adminPwd').value === 'admin') {
+                isManagementMode = true;
+                document.getElementById('managementView').style.display = 'block';
+                document.getElementById('audienceView').style.display = 'none';
+                closeModals();
+                render();
+            } else { alert('密碼錯誤！'); }
+        }
+
+        function openSongModal() { document.getElementById('songEditModal').classList.add('active'); }
+
+        function saveSong() {
+            const name = document.getElementById('editName').value;
+            const artist = document.getElementById('editArtist').value;
+            const tags = document.getElementById('editLang').value.split(',').map(t => t.trim());
+            if (!name) return;
             db.ref('songs').push({
-                name, artist, 
-                categories: { language: [lang] },
+                name, artist, tags,
                 isAvailable: true,
                 isHidden: false,
-                sungCount: 0
+                createdAt: Date.now()
             });
             closeModals();
         }
 
-        // --- 輔助工具 ---
-        function setFilter(f) {
-            currentFilter = f;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-            renderSongs();
+        function updateQueue(id, status) {
+            db.ref(`queue/${id}`).update({ status });
         }
+
+        function toggleAvailable(id, current) { db.ref(`songs/${id}`).update({ isAvailable: !current }); }
+        function toggleHide(id, current) { db.ref(`songs/${id}`).update({ isHidden: !current }); }
+        function deleteSong(id) { if(confirm('確定刪除？')) db.ref(`songs/${id}`).remove(); }
 
         function closeModals() {
             document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            document.getElementById('requesterName').value = '';
+            document.getElementById('requestMsg').value = '';
         }
 
-        function showToast(msg) {
+        function showToast(text) {
             const t = document.getElementById('toast');
-            t.textContent = msg;
+            t.innerText = text;
             t.style.display = 'block';
             setTimeout(() => t.style.display = 'none', 3000);
         }
 
-        function generateId() { return Date.now().toString(36); }
+        // 過濾器
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.onclick = function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                renderAudienceSongs();
+            };
+        });
+
+        document.getElementById('sortSelect').onchange = function() {
+            currentSort = this.value;
+            renderAudienceSongs();
+        };
+
     </script>
 </body>
 </html>
-
-
-
