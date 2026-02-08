@@ -208,7 +208,7 @@
                         <div class="flex gap-1 mb-2">${(s.tags || []).map(t => `<span class="px-2 py-0.5 bg-pink-50 text-pink-300 text-[10px] rounded-full">${t}</span>`).join('')}</div>
                         <div class="text-[10px] text-gray-300">🎧 累計演唱：${s.count || 0} 次</div>
                     </div>
-                    <button class="request-btn" onclick="openRequestModal('${s.id}')">點這首 ♪</button>
+                    <button class="request-btn" onclick="openRequestModal('${s.id}')">我想聽這首 ♪</button>
                 </div>
             `).join('');
         }
@@ -356,4 +356,5 @@
     </script>
 </body>
 </html>
+
 
