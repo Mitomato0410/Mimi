@@ -33,6 +33,10 @@
         
         .request-btn { width: 100%; padding: 12px; border: none; border-radius: 15px; background: linear-gradient(135deg, #FFB6D9 0%, #D4B5F0 100%); color: white; font-weight: 700; cursor: pointer; margin-top: 15px; transition: 0.3s; box-shadow: 0 4px 10px rgba(255, 182, 217, 0.4); }
 
+        .queue-section { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .status-singing { background: #FFE8F0; color: #FFB6D9; animation: pulse 2s infinite; border-radius: 10px; padding: 4px 10px; font-weight: 600; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal.active { display: flex; }
         .modal-content { background: white; border-radius: 25px; padding: 30px; max-width: 450px; width: 90%; }
@@ -56,6 +60,11 @@
 
     <div class="container">
         <div id="audienceView">
+            <div class="queue-section">
+                <h3 class="font-bold mb-3 text-pink-400 text-lg">🎵 目前排隊清單</h3>
+                <div id="queueList" class="space-y-2 text-gray-400">載入中...</div>
+            </div>
+
             <div class="search-filter-section">
                 <input type="text" id="searchInput" class="search-input" placeholder="🔍 搜尋歌名、歌手或關鍵字...">
                 <div id="filterButtons" class="filter-buttons">
@@ -71,13 +80,13 @@
 
         <div id="managementView" style="display:none;">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">管理後台 弥米專用 👑</h2>
+                <h2 class="text-2xl font-bold">管理後台 彌米專用 👑</h2>
                 <button class="bg-green-500 text-white px-6 py-2 rounded-xl font-bold" onclick="openSongModal()">新增歌曲 +</button>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="font-bold mb-4 border-b pb-2">📋 點歌清單 (對弥米說的話)</h3>
+                    <h3 class="font-bold mb-4 border-b pb-2">📋 點歌單管理</h3>
                     <div id="adminQueueList" class="space-y-4"></div>
                 </div>
                 <div class="bg-white p-6 rounded-2xl shadow-sm">
@@ -153,7 +162,6 @@
         let isManagementMode = false;
         let selectedSong = null;
 
-        // 資料同步
         db.ref('songs').on('value', snap => {
             const val = snap.val();
             songs = val ? Object.keys(val).map(k => ({...val[k], id: k})) : [];
@@ -168,94 +176,51 @@
 
         function render() {
             renderAudienceSongs();
+            renderAudienceQueue(); // 重新加入前台渲染
             if(isManagementMode) { renderAdminSongs(); renderAdminQueue(); }
         }
 
-        // 前台渲染
+        // --- 前台渲染函數 ---
         function renderAudienceSongs() {
             const grid = document.getElementById('songsGrid');
             let filtered = songs;
-
-            // 分類過濾
-            if(currentFilter !== 'all') {
-                filtered = filtered.filter(s => s.tags && s.tags.includes(currentFilter));
-            }
-            // 搜尋過濾
+            if(currentFilter !== 'all') filtered = filtered.filter(s => s.tags && s.tags.includes(currentFilter));
             if(searchQuery) {
                 const q = searchQuery.toLowerCase();
-                filtered = filtered.filter(s => 
-                    s.name.toLowerCase().includes(q) || 
-                    (s.artist && s.artist.toLowerCase().includes(q))
-                );
+                filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || (s.artist && s.artist.toLowerCase().includes(q)));
             }
-
             grid.innerHTML = filtered.map(s => `
                 <div class="song-card">
                     <div>
                         <div class="song-name">${s.name}</div>
                         <div class="text-gray-400 text-sm mb-3">${s.artist || '未知歌手'}</div>
-                        <div class="flex gap-1">
-                            ${(s.tags || []).map(t => `<span class="px-2 py-0.5 bg-pink-50 text-pink-300 text-[10px] rounded-full">${t}</span>`).join('')}
-                        </div>
+                        <div class="flex gap-1">${(s.tags || []).map(t => `<span class="px-2 py-0.5 bg-pink-50 text-pink-300 text-[10px] rounded-full">${t}</span>`).join('')}</div>
                     </div>
                     <button class="request-btn" onclick="openRequestModal('${s.id}')">點歌 ♪</button>
                 </div>
             `).join('');
         }
 
-        // 搜尋事件
-        document.getElementById('searchInput').oninput = function(e) {
-            searchQuery = e.target.value;
-            renderAudienceSongs();
-        };
-
-        // 分類事件
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.onclick = function() {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentFilter = this.dataset.filter;
-                renderAudienceSongs();
-            };
-        });
-
-        // 點歌邏輯
-        function openRequestModal(id) {
-            selectedSong = songs.find(s => s.id === id);
-            document.getElementById('targetSongName').innerText = selectedSong.name;
-            document.getElementById('requestModal').classList.add('active');
+        function renderAudienceQueue() {
+            const list = document.getElementById('queueList');
+            const active = queue.filter(q => q.status !== 'completed');
+            if(active.length === 0) { list.innerHTML = "目前還沒有人點歌唷，快來點一首給彌米聽！"; return; }
+            
+            list.innerHTML = active.map((q, i) => `
+                <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-50">
+                    <div>
+                        <span class="font-bold text-pink-300 mr-2">#${i+1}</span>
+                        <span class="font-medium">${q.songName}</span>
+                        <span class="text-xs text-gray-400 ml-2">by ${q.requester}</span>
+                    </div>
+                    <div class="${q.status==='singing' ? 'status-singing' : 'text-xs text-gray-300'}">
+                        ${q.status==='singing' ? '正在演唱 🎤' : '等待中'}
+                    </div>
+                </div>
+            `).join('');
         }
 
-        document.getElementById('confirmRequestBtn').onclick = function() {
-            const name = document.getElementById('requesterName').value;
-            if(!name) { alert('請輸入暱稱！'); return; }
-            db.ref('queue').push({
-                songName: selectedSong.name,
-                requester: name,
-                message: document.getElementById('requestMsg').value,
-                status: 'queued',
-                time: Date.now()
-            });
-            closeModals();
-            showToast('點歌成功，彌米收到了！');
-        };
-
-        // 管理邏輯
-        function saveSong() {
-            const name = document.getElementById('editName').value;
-            const artist = document.getElementById('editArtist').value;
-            const checkedTags = Array.from(document.querySelectorAll('.tag-checkbox:checked')).map(el => el.value);
-            
-            if(!name) return;
-            db.ref('songs').push({ name, artist, tags: checkedTags });
-            
-            // 重置
-            document.getElementById('editName').value = '';
-            document.getElementById('editArtist').value = '';
-            document.querySelectorAll('.tag-checkbox').forEach(el => el.checked = false);
-            closeModals();
-        }
-
+        // --- 後台管理渲染 ---
         function renderAdminQueue() {
             const active = queue.filter(q => q.status !== 'completed');
             document.getElementById('adminQueueList').innerHTML = active.map(q => `
@@ -264,12 +229,11 @@
                         <span>${q.songName}</span>
                         <span class="text-xs text-pink-400">by ${q.requester}</span>
                     </div>
-                    <div class="mt-2 text-sm bg-white p-2 rounded text-gray-500 italic">
-                        💬 對弥米說：${q.message || '（沒說話）'}
-                    </div>
+                    <div class="mt-2 text-sm bg-white p-2 rounded text-gray-500 italic">💬 對弥米說：${q.message || '（沒留言）'}</div>
                     <div class="mt-3 flex gap-2">
-                        <button class="bg-green-500 text-white px-4 py-1 rounded-lg text-xs" onclick="db.ref('queue/${q.id}').update({status:'completed'})">唱完</button>
-                        <button class="bg-gray-200 text-gray-500 px-4 py-1 rounded-lg text-xs" onclick="db.ref('queue/${q.id}').remove()">移除</button>
+                        <button class="flex-1 bg-blue-400 text-white px-4 py-1.5 rounded-lg text-xs font-bold" onclick="db.ref('queue/${q.id}').update({status:'singing'})">開始唱</button>
+                        <button class="flex-1 bg-green-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold" onclick="db.ref('queue/${q.id}').update({status:'completed'})">唱完囉</button>
+                        <button class="bg-gray-200 text-gray-500 px-3 py-1.5 rounded-lg text-xs" onclick="if(confirm('確定移除？')) db.ref('queue/${q.id}').remove()">移除</button>
                     </div>
                 </div>
             `).join('');
@@ -279,12 +243,46 @@
             document.getElementById('adminSongsList').innerHTML = songs.map(s => `
                 <div class="flex justify-between p-2 border-b hover:bg-gray-50">
                     <span>${s.name} <small class="text-gray-300">(${s.artist})</small></span>
-                    <button class="text-red-300" onclick="db.ref('songs/${s.id}').remove()">刪除</button>
+                    <button class="text-red-300" onclick="if(confirm('確定刪除？')) db.ref('songs/${s.id}').remove()">刪除</button>
                 </div>
             `).join('');
         }
 
-        // 通用
+        // 事件與彈窗
+        document.getElementById('searchInput').oninput = e => { searchQuery = e.target.value; renderAudienceSongs(); };
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.onclick = function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                renderAudienceSongs();
+            };
+        });
+
+        function openRequestModal(id) {
+            selectedSong = songs.find(s => s.id === id);
+            document.getElementById('targetSongName').innerText = selectedSong.name;
+            document.getElementById('requestModal').classList.add('active');
+        }
+
+        document.getElementById('confirmRequestBtn').onclick = () => {
+            const name = document.getElementById('requesterName').value;
+            if(!name) { alert('請輸入暱稱！'); return; }
+            db.ref('queue').push({ songName: selectedSong.name, requester: name, message: document.getElementById('requestMsg').value, status: 'queued', time: Date.now() });
+            closeModals(); showToast('點歌成功，彌米收到了！');
+        };
+
+        function saveSong() {
+            const name = document.getElementById('editName').value;
+            const artist = document.getElementById('editArtist').value;
+            const checkedTags = Array.from(document.querySelectorAll('.tag-checkbox:checked')).map(el => el.value);
+            if(!name) return;
+            db.ref('songs').push({ name, artist, tags: checkedTags });
+            document.getElementById('editName').value = ''; document.getElementById('editArtist').value = '';
+            document.querySelectorAll('.tag-checkbox').forEach(el => el.checked = false);
+            closeModals();
+        }
+
         function toggleMode() { document.getElementById('passwordModal').classList.add('active'); }
         function checkPwd() {
             if(document.getElementById('adminPwd').value === 'admin') {
