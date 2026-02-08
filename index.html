@@ -4,360 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎤 番茄園點歌系統 ♪</title>
+    <link rel="icon" href="favicon.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="icon.png" type="image/png">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Noto Sans TC', 'Poppins', sans-serif; background: linear-gradient(135deg, #FFF8F3 0%, #FFE8F0 100%); color: #5A4A4A; min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        
-        .header { text-align: center; padding: 40px 20px; background: linear-gradient(135deg, #FFB6D9 0%, #D4B5F0 100%); border-radius: 0 0 30px 30px; box-shadow: 0 4px 20px rgba(255, 182, 217, 0.3); margin-bottom: 30px; }
-        .header h1 { font-size: 2.2rem; font-weight: 700; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-
-        .section-card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        
-        .search-input { width: 100%; padding: 12px 20px; border: 2px solid #FFE8F0; border-radius: 15px; margin-bottom: 15px; outline: none; transition: 0.3s; }
-        .search-input:focus { border-color: #FFB6D9; box-shadow: 0 0 10px rgba(255,182,217,0.2); }
-        
-        .filter-btn { padding: 8px 18px; border: 2px solid #FFB6D9; background: white; color: #FFB6D9; border-radius: 25px; cursor: pointer; transition: all 0.3s; font-weight: 600; font-size: 0.9rem; }
-        .filter-btn.active { background: #FFB6D9; color: white; }
-
-        .songs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .song-card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: 2px solid transparent; transition: all 0.3s; display: flex; flex-direction: column; justify-content: space-between; }
-        .song-card:hover { transform: translateY(-5px); border-color: #FFB6D9; }
-        
-        .request-btn { width: 100%; padding: 12px; border: none; border-radius: 15px; background: linear-gradient(135deg, #FFB6D9 0%, #D4B5F0 100%); color: white; font-weight: 700; cursor: pointer; margin-top: 15px; transition: 0.3s; box-shadow: 0 4px 10px rgba(255, 182, 217, 0.4); }
-
+        body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), url('bg.jpg'); background-attachment: fixed; background-size: cover; background-position: center; color: #5A4A4A; min-height: 100vh; }
+        .section-card { background: rgba(255, 255, 255, 0.9); padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .song-card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: 2px solid transparent; transition: 0.3s; display: flex; flex-direction: column; justify-content: space-between; }
+        .request-btn { width: 100%; padding: 12px; border: none; border-radius: 15px; background: linear-gradient(135deg, #FFB6D9 0%, #D4B5F0 100%); color: white; font-weight: 700; cursor: pointer; margin-top: 15px; }
         .status-singing { background: #FFE8F0; color: #FFB6D9; animation: pulse 2s infinite; border-radius: 10px; padding: 4px 10px; font-weight: 600; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal.active { display: flex; }
         .modal-content { background: white; border-radius: 25px; padding: 30px; max-width: 450px; width: 90%; }
-        .form-input { width: 100%; padding: 14px; border: 2px solid #F0E8FF; border-radius: 15px; margin-top: 10px; outline: none; }
-
-        .tag-chip { padding: 6px 15px; border: 2px solid #F0E8FF; border-radius: 20px; cursor: pointer; font-size: 0.85rem; transition: 0.3s; }
-        .tag-checkbox { display: none; }
-        .tag-checkbox:checked + .tag-chip { background: #FFB6D9; border-color: #FFB6D9; color: white; }
-
-        .mode-switch { position: fixed; bottom: 20px; left: 20px; z-index: 1000; opacity: 0.4; }
-        .mode-btn { background: #5A4A4A; color: white; padding: 10px 18px; border-radius: 50px; cursor: pointer; border: none; font-size: 0.8rem; }
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #5A4A4A; color: white; padding: 12px 30px; border-radius: 50px; display: none; z-index: 3000; }
+        .song-hidden { opacity: 0.5; background: #f3f4f6; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h1>🎤 番茄園點歌系統 ♪</h1>
+    <div class="text-center py-10 bg-pink-200/50 mb-8 rounded-b-[40px] shadow-lg">
+        <h1 class="text-3xl font-bold text-white drop-shadow-md">🎤 番茄園點歌系統 ♪</h1>
     </div>
-
-    <div class="container">
+    <div class="container mx-auto px-4 max-w-6xl">
         <div id="audienceView">
             <div class="section-card">
-                <h3 class="font-bold mb-3 text-pink-400 text-lg flex items-center">🎵 目前排隊清單</h3>
+                <h3 class="font-bold mb-3 text-pink-400 text-lg">🎵 目前排隊清單</h3>
                 <div id="queueList" class="space-y-2 text-gray-400">載入中...</div>
             </div>
-
-            <div class="section-card bg-gray-50/50">
-                <h3 class="font-bold mb-3 text-gray-400 text-md flex items-center cursor-pointer" onclick="document.getElementById('doneList').classList.toggle('hidden')">
-                    ✅ 今日已演唱歌曲 (點擊展開/收合)
-                </h3>
-                <div id="doneList" class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-400 hidden">
-                    </div>
+            <div class="section-card bg-white/60">
+                <h3 class="font-bold mb-3 text-gray-500 cursor-pointer" onclick="document.getElementById('doneList').classList.toggle('hidden')">✅ 今日已唱歌曲 (點擊收放)</h3>
+                <div id="doneList" class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm hidden"></div>
             </div>
-
             <div class="section-card">
-                <input type="text" id="searchInput" class="search-input" placeholder="🔍 搜尋歌名、歌手或關鍵字...">
+                <input type="text" id="searchInput" class="w-full p-4 border-2 border-pink-50 rounded-2xl mb-4 outline-none focus:border-pink-200" placeholder="🔍 搜尋歌名或歌手...">
                 <div id="filterButtons" class="flex gap-2 flex-wrap">
-                    <button class="filter-btn active" data-filter="all">全部</button>
-                    <button class="filter-btn" data-filter="中文歌">中文歌</button>
-                    <button class="filter-btn" data-filter="日文歌">日文歌</button>
-                    <button class="filter-btn" data-filter="英文歌">英文歌</button>
+                    <button class="px-4 py-2 rounded-full border-2 border-pink-300 text-pink-400 font-bold active bg-pink-300 text-white" data-filter="all">全部</button>
+                    <button class="px-4 py-2 rounded-full border-2 border-pink-300 text-pink-400 font-bold" data-filter="中文歌">中文歌</button>
+                    <button class="px-4 py-2 rounded-full border-2 border-pink-300 text-pink-400 font-bold" data-filter="日文歌">日文歌</button>
+                    <button class="px-4 py-2 rounded-full border-2 border-pink-300 text-pink-400 font-bold" data-filter="英文歌">英文歌</button>
                 </div>
             </div>
-
-            <div class="songs-grid" id="songsGrid"></div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="songsGrid"></div>
         </div>
-
-        <div id="managementView" style="display:none;">
-            <div class="bg-white p-6 rounded-2xl mb-6 shadow-sm flex flex-wrap justify-between items-center gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold">彌米管理後台 👑</h2>
-                    <p class="text-xs text-gray-400">資料即時同步中</p>
-                </div>
+        <div id="managementView" class="hidden">
+            <div class="bg-white/90 p-6 rounded-3xl mb-6 shadow-sm flex flex-wrap justify-between items-center gap-4 border-2 border-pink-100">
+                <h2 class="text-2xl font-bold text-pink-400">彌米管理後台 👑</h2>
                 <div class="flex gap-2">
-                    <button class="bg-gray-500 text-white px-4 py-2 rounded-xl text-sm font-bold" onclick="forceUpdate()">🔄 重新整理資料庫</button>
-                    <button class="bg-red-400 text-white px-4 py-2 rounded-xl text-sm font-bold" onclick="clearDoneQueue()">🗑️ 清空今日已唱</button>
-                    <button class="bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-bold" onclick="openSongModal()">新增歌曲 +</button>
+                    <button class="bg-red-400 text-white px-4 py-2 rounded-xl text-xs" onclick="clearDoneQueue()">🗑️ 清空今日已唱</button>
+                    <button class="bg-green-500 text-white px-4 py-2 rounded-xl text-xs font-bold" onclick="openSongModal()">新增歌曲 +</button>
                 </div>
             </div>
-            
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="font-bold mb-4 border-b pb-2">📋 待唱清單</h3>
-                    <div id="adminQueueList" class="space-y-4"></div>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="font-bold mb-4 border-b pb-2">🎵 歌曲庫管理</h3>
-                    <div id="adminSongsList" class="space-y-1 text-sm overflow-y-auto max-h-[500px]"></div>
-                </div>
+                <div class="section-card"><h3 class="font-bold mb-4 border-b pb-2">📋 待唱清單</h3><div id="adminQueueList" class="space-y-4"></div></div>
+                <div class="section-card"><h3 class="font-bold mb-4 border-b pb-2">🎵 歌曲庫 </h3><div id="adminSongsList" class="space-y-2 max-h-[600px] overflow-y-auto"></div></div>
             </div>
         </div>
     </div>
-
-    <div class="mode-switch">
-        <button class="mode-btn" onclick="toggleMode()">切換模式</button>
-    </div>
-
-    <div class="modal" id="requestModal">
-        <div class="modal-content">
-            <h3 class="text-xl font-bold mb-2">點歌確認</h3>
-            <p id="targetSongName" class="text-pink-400 font-bold text-lg"></p>
-            <input type="text" id="requesterName" class="form-input" placeholder="你的暱稱 (必填)">
-            <textarea id="requestMsg" class="form-input h-24" placeholder="想對彌米說的話 (選填)"></textarea>
-            <button class="request-btn" id="confirmRequestBtn">確認點歌 ♪</button>
-            <button class="w-full mt-4 text-gray-400 text-sm" onclick="closeModals()">取消</button>
-        </div>
-    </div>
-
-    <div class="modal" id="songEditModal">
-        <div class="modal-content">
-            <h3 class="text-xl font-bold mb-4">新增歌曲</h3>
-            <input type="text" id="editName" class="form-input" placeholder="歌名">
-            <input type="text" id="editArtist" class="form-input" placeholder="歌手">
-            <div class="mt-4 text-sm font-bold text-gray-500">分類：</div>
-            <div class="flex gap-2 mt-2">
-                <label><input type="checkbox" class="tag-checkbox" value="中文歌"><span class="tag-chip">中文</span></label>
-                <label><input type="checkbox" class="tag-checkbox" value="日文歌"><span class="tag-chip">日文</span></label>
-                <label><input type="checkbox" class="tag-checkbox" value="英文歌"><span class="tag-chip">英文</span></label>
-            </div>
-            <button class="request-btn" onclick="saveSong()">上架</button>
-            <button class="w-full mt-4 text-gray-400 text-sm" onclick="closeModals()">取消</button>
-        </div>
-    </div>
-
-    <div class="modal" id="passwordModal">
-        <div class="modal-content">
-            <h3 class="text-xl font-bold mb-4">身份驗證</h3>
-            <input type="password" id="adminPwd" class="form-input" placeholder="請輸入管理密碼">
-            <button class="request-btn" onclick="checkPwd()">進入</button>
-        </div>
-    </div>
-
+    <button onclick="toggleMode()" style="position:fixed; bottom:20px; left:20px; opacity:0.3; font-size:10px;">切換模式</button>
+    <div class="modal" id="requestModal"><div class="modal-content"><h3 class="text-xl font-bold mb-2">點歌：<span id="targetSongName" class="text-pink-400"></span></h3><input type="text" id="requesterName" class="w-full p-3 border rounded-xl mb-3" placeholder="你的暱稱"><textarea id="requestMsg" class="w-full p-3 border rounded-xl h-24 mb-3" placeholder="想對彌米說的話"></textarea><button class="request-btn" id="confirmRequestBtn">送出點歌 ♪</button><button class="w-full mt-2 text-gray-400" onclick="closeModals()">取消</button></div></div>
+    <div class="modal" id="songEditModal"><div class="modal-content"><h3 class="text-xl font-bold mb-4">新增歌曲</h3><input type="text" id="editName" class="w-full p-3 border rounded-xl mb-3" placeholder="歌名"><input type="text" id="editArtist" class="w-full p-3 border rounded-xl mb-3" placeholder="歌手"><div class="flex gap-2 mb-4"><label><input type="checkbox" class="tag-check" value="中文歌"> 中文</label><label><input type="checkbox" class="tag-check" value="日文歌"> 日文</label><label><input type="checkbox" class="tag-check" value="英文歌"> 英文</label></div><button class="request-btn" onclick="saveSong()">上架</button><button class="w-full mt-2 text-gray-400" onclick="closeModals()">取消</button></div></div>
+    <div class="modal" id="passwordModal"><div class="modal-content"><h3 class="text-xl font-bold mb-4">身份驗證</h3><input type="password" id="adminPwd" class="w-full p-3 border rounded-xl mb-4" placeholder="密碼"><button class="request-btn" onclick="checkPwd()">進入</button></div></div>
     <div id="toast" class="toast"></div>
-
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAZr1jc23-EdgzDxUVMdRn-ROZ8ZWS_L5k",
-            authDomain: "vtuber-ktv.firebaseapp.com",
-            projectId: "vtuber-ktv",
-            storageBucket: "vtuber-ktv.firebasestorage.app",
-            messagingSenderId: "570327519718",
-            appId: "1:570327519718:web:0db4c15b94e7cad34a0627",
-            databaseURL: "https://vtuber-ktv-default-rtdb.firebaseio.com"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyAZr1jc23-EdgzDxUVMdRn-ROZ8ZWS_L5k", authDomain: "vtuber-ktv.firebaseapp.com", projectId: "vtuber-ktv", storageBucket: "vtuber-ktv.firebasestorage.app", messagingSenderId: "570327519718", appId: "1:570327519718:web:0db4c15b94e7cad34a0627", databaseURL: "https://vtuber-ktv-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        let songs = [], queue = [], currentFilter = 'all', searchQuery = '', isManagementMode = false, selectedSong = null;
 
-        let songs = [];
-        let queue = [];
-        let currentFilter = 'all';
-        let searchQuery = '';
-        let isManagementMode = false;
-        let selectedSong = null;
-
-        // 監聽數據
-        db.ref('songs').on('value', snap => {
-            const val = snap.val();
-            songs = val ? Object.keys(val).map(k => ({...val[k], id: k})) : [];
-            render();
-        });
-
-        db.ref('queue').on('value', snap => {
-            const val = snap.val();
-            queue = val ? Object.keys(val).map(k => ({...val[k], id: k})) : [];
-            render();
-        });
+        db.ref('songs').on('value', snap => { const val = snap.val(); songs = val ? Object.keys(val).map(k => ({...val[k], id: k})) : []; render(); });
+        db.ref('queue').on('value', snap => { const val = snap.val(); queue = val ? Object.keys(val).map(k => ({...val[k], id: k})) : []; render(); });
 
         function render() {
-            renderAudienceSongs();
-            renderAudienceQueue();
-            renderDoneList();
-            if(isManagementMode) { renderAdminSongs(); renderAdminQueue(); }
-        }
-
-        // 前台渲染
-        function renderAudienceSongs() {
             const grid = document.getElementById('songsGrid');
-            let filtered = songs;
+            // 前台過濾掉隱藏歌曲
+            let filtered = songs.filter(s => !s.hidden);
             if(currentFilter !== 'all') filtered = filtered.filter(s => s.tags && s.tags.includes(currentFilter));
-            if(searchQuery) {
-                const q = searchQuery.toLowerCase();
-                filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || (s.artist && s.artist.toLowerCase().includes(q)));
-            }
-            grid.innerHTML = filtered.map(s => `
-                <div class="song-card">
-                    <div>
-                        <div class="song-name">${s.name}</div>
-                        <div class="text-gray-400 text-sm mb-2">${s.artist || '未知歌手'}</div>
-                        <div class="flex gap-1 mb-2">${(s.tags || []).map(t => `<span class="px-2 py-0.5 bg-pink-50 text-pink-300 text-[10px] rounded-full">${t}</span>`).join('')}</div>
-                        <div class="text-[10px] text-gray-300">🎧 累計演唱：${s.count || 0} 次</div>
-                    </div>
-                    <button class="request-btn" onclick="openRequestModal('${s.id}')">我想聽這首 ♪</button>
-                </div>
-            `).join('');
-        }
+            if(searchQuery) { const q = searchQuery.toLowerCase(); filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || (s.artist && s.artist.toLowerCase().includes(q))); }
+            grid.innerHTML = filtered.map(s => `<div class="song-card"><div><div class="font-bold text-lg">${s.name}</div><div class="text-gray-400 text-sm mb-2">${s.artist||''}</div><div class="text-[10px] text-gray-300 italic">唱過 ${s.count||0} 次</div></div><button class="request-btn" onclick="openRequestModal('${s.id}')">點歌 ♪</button></div>`).join('');
 
-        function renderAudienceQueue() {
-            const list = document.getElementById('queueList');
+            const qList = document.getElementById('queueList');
             const active = queue.filter(q => q.status !== 'completed');
-            if(active.length === 0) { list.innerHTML = "目前沒人在排隊唷，快來點一首！"; return; }
-            list.innerHTML = active.map((q, i) => `
-                <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-50">
-                    <div>
-                        <span class="font-bold text-pink-300 mr-2">#${i+1}</span>
-                        <span class="font-medium">${q.songName}</span>
-                        <span class="text-xs text-gray-400 ml-2">by ${q.requester}</span>
-                    </div>
-                    <div class="${q.status==='singing' ? 'status-singing' : 'text-xs text-gray-300'}">
-                        ${q.status==='singing' ? '正在演唱 🎤' : '等待中'}
-                    </div>
-                </div>
-            `).join('');
-        }
+            qList.innerHTML = active.length ? active.map((q, i) => `<div class="flex justify-between items-center bg-white/80 p-4 rounded-xl shadow-sm border border-pink-50"><span><b class="text-pink-300">#${i+1}</b> ${q.songName} <small class="text-gray-400">by ${q.requester}</small></span><span class="${q.status==='singing'?'status-singing':'text-xs text-gray-300'}">${q.status==='singing'?'🎤 演唱中':'排隊中'}</span></div>`).join('') : "目前排隊是空的唷！";
 
-        function renderDoneList() {
-            const list = document.getElementById('doneList');
-            const done = queue.filter(q => q.status === 'completed');
-            if(done.length === 0) { list.innerHTML = "<div class='col-span-full'>今日尚未有演唱紀錄</div>"; return; }
-            list.innerHTML = done.map(q => `
-                <div class="bg-white/50 p-2 rounded border border-gray-100 truncate" title="${q.songName}">
-                    ✅ ${q.songName}
-                </div>
-            `).join('');
-        }
-
-        // 點歌逻辑
-        function openRequestModal(id) {
-            selectedSong = songs.find(s => s.id === id);
-            document.getElementById('targetSongName').innerText = selectedSong.name;
-            document.getElementById('requestModal').classList.add('active');
-        }
-
-        document.getElementById('confirmRequestBtn').onclick = () => {
-            const name = document.getElementById('requesterName').value;
-            if(!name) { alert('暱稱必填唷！'); return; }
-            db.ref('queue').push({ 
-                songId: selectedSong.id, 
-                songName: selectedSong.name, 
-                requester: name, 
-                message: document.getElementById('requestMsg').value, 
-                status: 'queued', 
-                time: Date.now() 
-            });
-            closeModals(); showToast('點歌成功，彌米收到囉！');
-        };
-
-        // 管理邏輯
-        function renderAdminQueue() {
-            const active = queue.filter(q => q.status !== 'completed');
-            document.getElementById('adminQueueList').innerHTML = active.map(q => `
-                <div class="p-4 bg-pink-50 rounded-xl border border-pink-100">
-                    <div class="flex justify-between font-bold">
-                        <span>${q.songName}</span>
-                        <span class="text-xs text-pink-400">by ${q.requester}</span>
-                    </div>
-                    <div class="mt-2 text-sm bg-white p-2 rounded text-gray-500 italic">💬 對彌米說：${q.message || '（無留言）'}</div>
-                    <div class="mt-3 flex gap-2">
-                        <button class="flex-1 bg-blue-400 text-white py-2 rounded-lg text-xs font-bold" onclick="db.ref('queue/${q.id}').update({status:'singing'})">開始唱</button>
-                        <button class="flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold" onclick="completeSong('${q.id}', '${q.songId}')">唱完囉</button>
-                        <button class="bg-gray-200 text-gray-500 px-3 py-2 rounded-lg text-xs" onclick="db.ref('queue/${q.id}').remove()">移除</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function completeSong(queueId, songId) {
-            // 1. 標記點歌單為完成
-            db.ref('queue/' + queueId).update({ status: 'completed' });
-            // 2. 累計歌曲演唱次數
-            if(songId) {
-                const songRef = db.ref('songs/' + songId + '/count');
-                songRef.transaction(currentCount => (currentCount || 0) + 1);
-            }
-        }
-
-        function clearDoneQueue() {
-            if(!confirm('確定要清空今日已演唱的所有紀錄嗎？')) return;
+            const doneList = document.getElementById('doneList');
             const doneItems = queue.filter(q => q.status === 'completed');
-            doneItems.forEach(item => {
-                db.ref('queue/' + item.id).remove();
-            });
-            showToast('今日紀錄已歸零');
+            doneList.innerHTML = doneItems.length ? doneItems.map(q => `<div class="bg-white/40 p-2 rounded border border-white truncate">✅ ${q.songName}</div>`).join('') : "<div class='text-gray-400'>尚無演唱紀錄</div>";
+
+            if(isManagementMode) {
+                document.getElementById('adminQueueList').innerHTML = active.map(q => `<div class="p-4 bg-pink-50 rounded-xl border border-pink-100"><div class="flex justify-between font-bold"><span>${q.songName}</span><span class="text-pink-400 text-xs">${q.requester}</span></div><div class="text-xs text-gray-500 mt-2 bg-white/50 p-2 rounded">💬留言：${q.message||'無'}</div><div class="mt-3 flex gap-2"><button class="flex-1 bg-blue-400 text-white py-1.5 rounded-lg text-xs" onclick="db.ref('queue/${q.id}').update({status:'singing'})">開始唱</button><button class="flex-1 bg-green-500 text-white py-1.5 rounded-lg text-xs" onclick="completeSong('${q.id}','${q.songId}')">唱完</button><button class="bg-gray-200 text-gray-500 px-3 py-1.5 rounded-lg text-xs" onclick="db.ref('queue/${q.id}').remove()">刪除</button></div></div>`).join('');
+                document.getElementById('adminSongsList').innerHTML = songs.map(s => `
+                    <div class="flex justify-between items-center p-3 border-b hover:bg-white/50 rounded-lg ${s.hidden ? 'song-hidden' : ''}">
+                        <div class="flex-1">
+                            <span class="font-bold">${s.name}</span> <small class="text-gray-400">(${s.artist||'?'})</small>
+                            <div class="text-[10px] text-gray-400">累計：${s.count||0} 次</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="text-xs px-2 py-1 rounded border ${s.hidden ? 'bg-gray-400 text-white' : 'border-gray-300 text-gray-500'}" onclick="db.ref('songs/${s.id}').update({hidden:${!s.hidden}})">
+                                ${s.hidden ? '🙈 隱藏中' : '👁️ 顯示中'}
+                            </button>
+                            <button class="text-red-300 hover:text-red-500 text-xs" onclick="if(confirm('刪除？')) db.ref('songs/${s.id}').remove()">❌</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
         }
 
-        function forceUpdate() {
-            render();
-            showToast('資料已手動同步更新');
-        }
-
-        function renderAdminSongs() {
-            document.getElementById('adminSongsList').innerHTML = songs.map(s => `
-                <div class="flex justify-between p-2 border-b hover:bg-gray-50 items-center">
-                    <span>${s.name} <small class="text-gray-300">(${s.artist || '無'}) - 唱過 ${s.count || 0} 次</small></span>
-                    <button class="text-red-300 hover:text-red-500" onclick="if(confirm('確定刪除？')) db.ref('songs/${s.id}').remove()">刪除</button>
-                </div>
-            `).join('');
-        }
-
-        function saveSong() {
-            const name = document.getElementById('editName').value;
-            const artist = document.getElementById('editArtist').value;
-            const tags = Array.from(document.querySelectorAll('.tag-checkbox:checked')).map(el => el.value);
-            if(!name) return;
-            db.ref('songs').push({ name, artist, tags, count: 0 });
-            document.getElementById('editName').value = ''; document.getElementById('editArtist').value = '';
-            document.querySelectorAll('.tag-checkbox').forEach(el => el.checked = false);
-            closeModals();
-        }
-
-        // 通用功能
-        document.getElementById('searchInput').oninput = e => { searchQuery = e.target.value; renderAudienceSongs(); };
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.onclick = function() {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentFilter = this.dataset.filter;
-                renderAudienceSongs();
-            };
-        });
-
+        function openRequestModal(id) { selectedSong = songs.find(s => s.id === id); document.getElementById('targetSongName').innerText = selectedSong.name; document.getElementById('requestModal').classList.add('active'); }
+        document.getElementById('confirmRequestBtn').onclick = () => { const name = document.getElementById('requesterName').value; if(!name) return alert('請填寫暱稱'); db.ref('queue').push({ songId: selectedSong.id, songName: selectedSong.name, requester: name, message: document.getElementById('requestMsg').value, status: 'queued', time: Date.now() }); closeModals(); showToast('點歌成功！'); };
+        function completeSong(qid, sid) { db.ref('queue/'+qid).update({status:'completed'}); if(sid) db.ref('songs/'+sid+'/count').transaction(c => (c||0)+1); }
+        function clearDoneQueue() { if(confirm('清空今日已唱？')) queue.filter(q => q.status === 'completed').forEach(q => db.ref('queue/'+q.id).remove()); }
+        function saveSong() { const name = document.getElementById('editName').value; const artist = document.getElementById('editArtist').value; const tags = Array.from(document.querySelectorAll('.tag-check:checked')).map(el => el.value); if(name) db.ref('songs').push({ name, artist, tags, count: 0, hidden: false }); closeModals(); }
+        function checkPwd() { if(document.getElementById('adminPwd').value === 'mimi0410') { isManagementMode = true; document.getElementById('managementView').classList.remove('hidden'); document.getElementById('audienceView').classList.add('hidden'); closeModals(); render(); } else alert('密碼錯囉'); }
+        document.getElementById('searchInput').oninput = e => { searchQuery = e.target.value; render(); };
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.onclick = function() { document.querySelectorAll('.filter-btn').forEach(b => {b.classList.remove('active'); b.classList.remove('bg-pink-300'); b.classList.remove('text-white');}); this.classList.add('active'); this.classList.add('bg-pink-300'); this.classList.add('text-white'); currentFilter = this.dataset.filter; render(); });
         function toggleMode() { document.getElementById('passwordModal').classList.add('active'); }
-        function checkPwd() {
-            if(document.getElementById('adminPwd').value === 'pmdmnmkz4') {
-                isManagementMode = true;
-                document.getElementById('managementView').style.display = 'block';
-                document.getElementById('audienceView').style.display = 'none';
-                closeModals(); render();
-            } else { alert('密碼錯誤'); }
-        }
         function openSongModal() { document.getElementById('songEditModal').classList.add('active'); }
         function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
-        function showToast(txt) {
-            const t = document.getElementById('toast');
-            t.innerText = txt; t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
-        }
+        function showToast(t) { const s = document.getElementById('toast'); s.innerText = t; s.style.display = 'block'; setTimeout(()=>s.style.display='none', 3000); }
     </script>
 </body>
 </html>
-
-
-
-
-
