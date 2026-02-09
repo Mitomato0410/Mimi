@@ -52,7 +52,7 @@
 <body>
 
     <div class="header">
-        <h1>🎤 番茄園點歌系統 ♪</h1>
+        <h1 onclick="toggleMode()" style="cursor: default;">🎤 番茄園點歌系統 ♪</h1>
     </div>
 
     <div class="container">
@@ -109,8 +109,6 @@
         </div>
     </div>
 
-    <div class="mode-switch">
-        <button class="mode-btn" onclick="toggleMode()">切換模式</button>
     </div>
 
     <div class="modal" id="requestModal">
@@ -194,7 +192,7 @@
         // 前台渲染
         function renderAudienceSongs() {
             const grid = document.getElementById('songsGrid');
-            let filtered = songs;
+            let filtered = songs.filter(s => !s.hidden);
             if(currentFilter !== 'all') filtered = filtered.filter(s => s.tags && s.tags.includes(currentFilter));
             if(searchQuery) {
                 const q = searchQuery.toLowerCase();
@@ -306,14 +304,20 @@
             showToast('資料已手動同步更新');
         }
 
-        function renderAdminSongs() {
-            document.getElementById('adminSongsList').innerHTML = songs.map(s => `
-                <div class="flex justify-between p-2 border-b hover:bg-gray-50 items-center">
-                    <span>${s.name} <small class="text-gray-300">(${s.artist || '無'}) - 唱過 ${s.count || 0} 次</small></span>
-                    <button class="text-red-300 hover:text-red-500" onclick="if(confirm('確定刪除？')) db.ref('songs/${s.id}').remove()">刪除</button>
-                </div>
-            `).join('');
-        }
+       function renderAdminSongs() {
+    document.getElementById('adminSongsList').innerHTML = songs.map(s => `
+        <div class="flex justify-between p-2 border-b hover:bg-gray-50 items-center ${s.hidden ? 'opacity-40 bg-gray-100' : ''}">
+            <span>${s.name} <small class="text-gray-400">(${s.artist || '無'})</small></span>
+            <div class="flex gap-2">
+                <button class="text-[10px] px-2 py-1 rounded border ${s.hidden ? 'bg-gray-500 text-white' : 'border-gray-300 text-gray-500'}" 
+                        onclick="db.ref('songs/${s.id}').update({hidden:${!s.hidden}})">
+                    ${s.hidden ? '🙈 隱藏中' : '👁️ 顯示中'}
+                </button>
+                <button class="text-red-300 text-xs" onclick="if(confirm('確定刪除？')) db.ref('songs/${s.id}').remove()">❌</button>
+            </div>
+        </div>
+    `).join('');
+}
 
         function saveSong() {
             const name = document.getElementById('editName').value;
@@ -339,7 +343,7 @@
 
         function toggleMode() { document.getElementById('passwordModal').classList.add('active'); }
         function checkPwd() {
-            if(document.getElementById('adminPwd').value === 'admin') {
+            if(document.getElementById('adminPwd').value === 'pmdmnmkz4') {
                 isManagementMode = true;
                 document.getElementById('managementView').style.display = 'block';
                 document.getElementById('audienceView').style.display = 'none';
@@ -356,3 +360,4 @@
     </script>
 </body>
 </html>
+
